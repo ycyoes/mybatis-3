@@ -48,11 +48,18 @@ public class PropertyParser {
 
   private PropertyParser() {
     // Prevent Instantiation
+    //构造方法，修饰符为 private ，禁止构造 PropertyParser 对象，因为它是一个静态方法的工具类
   }
 
+  /**
+   *基于 variables 变量，替换 string 字符串中的动态属性，并返回结果
+   */
   public static String parse(String string, Properties variables) {
+    // <2.1> 创建 VariableTokenHandler 对象
     VariableTokenHandler handler = new VariableTokenHandler(variables);
+    // <2.2> 创建 GenericTokenParser 对象
     GenericTokenParser parser = new GenericTokenParser("${", "}", handler);
+    // <2.3> 执行解析
     return parser.parse(string);
   }
 
