@@ -336,19 +336,22 @@ public class Reflector {
   private Method[] getClassMethods(Class<?> clazz) {
     Map<String, Method> uniqueMethods = new HashMap<>();
     Class<?> currentClass = clazz;
+    //当前类不为空且为非Object类
     while (currentClass != null && currentClass != Object.class) {
+      //将方法添加到uniqueMethods
       addUniqueMethods(uniqueMethods, currentClass.getDeclaredMethods());
 
       // we also need to look for interface methods -
       // because the class may be abstract
+      //将接口添加到uniqueMethods
       Class<?>[] interfaces = currentClass.getInterfaces();
       for (Class<?> anInterface : interfaces) {
         addUniqueMethods(uniqueMethods, anInterface.getMethods());
       }
-
+      //将当前类设为所属父类继续遍历，将父类接口和方法添加到uniqueMethods
       currentClass = currentClass.getSuperclass();
     }
-
+    //将uniqueMethods转为方法数组并返回
     Collection<Method> methods = uniqueMethods.values();
 
     return methods.toArray(new Method[0]);
@@ -356,11 +359,14 @@ public class Reflector {
 
   private void addUniqueMethods(Map<String, Method> uniqueMethods, Method[] methods) {
     for (Method currentMethod : methods) {
+      //如果不是桥接方法(https://www.zhihu.com/question/54895701)
       if (!currentMethod.isBridge()) {
+        //获得方法签名
         String signature = getSignature(currentMethod);
         // check to see if the method is already known
         // if it is known, then an extended class must have
         // overridden a method
+        // 当 uniqueMethods 不存在时，进行添加
         if (!uniqueMethods.containsKey(signature)) {
           uniqueMethods.put(signature, currentMethod);
         }
@@ -368,13 +374,23 @@ public class Reflector {
     }
   }
 
+  /**
+   * 获取方法签名
+   * 格式：returnType#方法名:参数名1,参数名2,参数名3
+   * 例如：void#checkPackageAccess:java.lang.ClassLoader,boolean
+   * @param method 方法
+   * @return
+   */
   private String getSignature(Method method) {
     StringBuilder sb = new StringBuilder();
+    //获取返回类型
     Class<?> returnType = method.getReturnType();
     if (returnType != null) {
       sb.append(returnType.getName()).append('#');
     }
+    //方法名
     sb.append(method.getName());
+    //方法参数
     Class<?>[] parameters = method.getParameterTypes();
     for (int i = 0; i < parameters.length; i++) {
       sb.append(i == 0 ? ':' : ',').append(parameters[i].getName());
