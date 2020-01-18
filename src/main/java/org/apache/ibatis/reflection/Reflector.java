@@ -142,27 +142,53 @@ public class Reflector {
     resolveGetterConflicts(conflictingGetters);
   }
 
+  /**
+   * 解决 getter 冲突方法。最终，一个属性，只保留一个对应的方法。
+   * 解决冲突规则：
+   * 1. 类型不同 - 选择子类
+   * 2. 类型相同 - 选择is的布尔类型
+   * @param conflictingGetters
+   */
   private void resolveGetterConflicts(Map<String, List<Method>> conflictingGetters) {
+    // 遍历每个属性，查找其最匹配的方法。因为子类可以覆写父类的方法，所以一个属性，可能对应多个 getter 方法
     for (Entry<String, List<Method>> entry : conflictingGetters.entrySet()) {
-      Method winner = null;
+      Method winner = null; // 最匹配的方法
       String propName = entry.getKey();
       boolean isAmbiguous = false;
       for (Method candidate : entry.getValue()) {
+        // winner 为空，说明 candidate 为最匹配的方法
         if (winner == null) {
           winner = candidate;
           continue;
         }
+        // <1> 基于返回类型比较
         Class<?> winnerType = winner.getReturnType();
         Class<?> candidateType = candidate.getReturnType();
+        // 类型相同
         if (candidateType.equals(winnerType)) {
+          /**
+           * 返回值类型相同
+           * 按理来说不会出现这种情况， 因为在获取方法的时候已经使用签名去除掉了， 因此此时可以抛出异常。
+           * 但是有一种特殊的情况：
+           *
+           * public boolean isBool() {return true;}// 方法1
+           * public boolean getBool() {return false;}// 方法2
+           * 以上情况在 JavaBean 规范中是允许的（但是， 其实方法2几乎大家都不会这么用）。
+           * 因此， mybatis 通过以下的方式进行了过滤。
+           *
+           * 也就是说， mybatis 承认的是方法1这种。 方法2的忽略掉。
+           */
           if (!boolean.class.equals(candidateType)) {
             isAmbiguous = true;
             break;
           } else if (candidate.getName().startsWith("is")) {
             winner = candidate;
           }
+          // candidateType是winnerType的超类
         } else if (candidateType.isAssignableFrom(winnerType)) {
           // OK getter type is descendant
+          // <1.1> 符合选择子类。因为子类可以修改放大返回值。
+          // 例如，父类的一个方法的返回值为 List ，子类对该方法的返回值可以覆写为 ArrayList 。
         } else if (winnerType.isAssignableFrom(candidateType)) {
           winner = candidate;
         } else {
@@ -170,6 +196,7 @@ public class Reflector {
           break;
         }
       }
+      // <2> 添加到 getMethods 和 getTypes 中
       addGetMethod(propName, winner, isAmbiguous);
     }
   }
@@ -180,15 +207,18 @@ public class Reflector {
             "Illegal overloaded getter method with ambiguous type for property ''{0}'' in class ''{1}''. This breaks the JavaBeans specification and can cause unpredictable results.",
             name, method.getDeclaringClass().getName()))
         : new MethodInvoker(method);
+    // 添加到 getMethods 中
     getMethods.put(name, invoker);
+    // 添加到 getTypes 中
     Type returnType = TypeParameterResolver.resolveReturnType(method, type);
     getTypes.put(name, typeToClass(returnType));
   }
 
   private void addSetMethods(Class<?> clazz) {
     Map<String, List<Method>> conflictingSetters = new HashMap<>();
+    //获取所有类方法
     Method[] methods = getClassMethods(clazz);
-    //获取
+    //获取setter方法并放入conflictingSetters
     Arrays.stream(methods).filter(m -> m.getParameterTypes().length == 1 && PropertyNamer.isSetter(m.getName()))
       .forEach(m -> addMethodConflict(conflictingSetters, PropertyNamer.methodToProperty(m.getName()), m));
     resolveSetterConflicts(conflictingSetters);
@@ -210,6 +240,10 @@ public class Reflector {
     }
   }
 
+  /**
+   * 解决set方法冲突(泛型导致)
+   * @param conflictingSetters
+   */
   private void resolveSetterConflicts(Map<String, List<Method>> conflictingSetters) {
     for (String propName : conflictingSetters.keySet()) {
       List<Method> setters = conflictingSetters.get(propName);
@@ -217,12 +251,15 @@ public class Reflector {
       boolean isGetterAmbiguous = getMethods.get(propName) instanceof AmbiguousMethodInvoker;
       boolean isSetterAmbiguous = false;
       Method match = null;
+      // 遍历属性对应的 setter 方法
       for (Method setter : setters) {
+        //getter未异常，setter参数类型与getter类型匹配
         if (!isGetterAmbiguous && setter.getParameterTypes()[0].equals(getterType)) {
           // should be the best match
           match = setter;
           break;
         }
+
         if (!isSetterAmbiguous) {
           match = pickBetterSetter(match, setter, propName);
           isSetterAmbiguous = match == null;
@@ -264,19 +301,23 @@ public class Reflector {
 
   private Class<?> typeToClass(Type src) {
     Class<?> result = null;
+    // 普通类型，直接使用类
     if (src instanceof Class) {
       result = (Class<?>) src;
+      // 泛型类型，使用泛型
     } else if (src instanceof ParameterizedType) {
       result = (Class<?>) ((ParameterizedType) src).getRawType();
+      // 泛型数组，获得具体类
     } else if (src instanceof GenericArrayType) {
       Type componentType = ((GenericArrayType) src).getGenericComponentType();
-      if (componentType instanceof Class) {
+      if (componentType instanceof Class) { // 普通类型
         result = Array.newInstance((Class<?>) componentType, 0).getClass();
       } else {
-        Class<?> componentClass = typeToClass(componentType);
+        Class<?> componentClass = typeToClass(componentType); // 递归该方法，返回类
         result = Array.newInstance(componentClass, 0).getClass();
       }
     }
+    // 都不符合，使用 Object 类
     if (result == null) {
       result = Object.class;
     }
@@ -329,6 +370,12 @@ public class Reflector {
    * declared in this class and any superclass.
    * We use this method, instead of the simpler <code>Class.getMethods()</code>,
    * because we want to look for private methods as well.
+   * 由于在获取方法时， 通过调用当前类及其除 Object 之外的所有父类的 getDeclaredMethods 方法及 getInterfaces() 方法，
+   * 因此， 其获取到的方法是该类及其父类的所有方法。
+   *
+   * 由此， 产生了一个问题， 如果子类重写了父类中的方法， 如果返回值相同， 则可以通过键重复来去掉。
+   * 但是， 如果方法返回值是父类相同实体方法返回值类型的子类， 则就会导致两个方法是同一个方法， 但是签名不同。
+   * 因此， 需要解决此类冲突
    *
    * @param clazz The class
    * @return An array containing all methods in this class
