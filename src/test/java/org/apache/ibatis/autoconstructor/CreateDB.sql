@@ -1,5 +1,5 @@
 --
---    Copyright 2009-2018 the original author or authors.
+--    Copyright 2009-2020 the original author or authors.
 --
 --    Licensed under the Apache License, Version 2.0 (the "License");
 --    you may not use this file except in compliance with the License.
@@ -13,9 +13,7 @@
 --    See the License for the specific language governing permissions and
 --    limitations under the License.
 --
--- 用于单元测试里，初始化数据库的数据
--- 创建了 subject 表，并初始化三条数据。
--- 创建了 extensive_subject 表，并初始化三条数据。
+
 DROP TABLE subject
 IF EXISTS;
 
