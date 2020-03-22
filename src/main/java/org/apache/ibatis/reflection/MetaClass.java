@@ -138,7 +138,7 @@ public class MetaClass {
         _method.setAccessible(true);
         Method method = (Method) _method.get(invoker);
         return TypeParameterResolver.resolveReturnType(method, reflector.getType());
-        // 如果 GetFieldInvoker 对象，则说明是 field ，直接访问
+        // 如果是 GetFieldInvoker 对象，则说明是 field ，直接访问
       } else if (invoker instanceof GetFieldInvoker) {
         Field _field = GetFieldInvoker.class.getDeclaredField("field");
         _field.setAccessible(true);

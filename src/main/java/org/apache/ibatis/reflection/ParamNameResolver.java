@@ -47,6 +47,9 @@ public class ParamNameResolver {
    */
   private final SortedMap<Integer, String> names;
 
+  /**
+   * 是否有 {@link Param} 注解的参数
+   */
   private boolean hasParamAnnotation;
 
   public ParamNameResolver(Configuration config, Method method) {
