@@ -56,6 +56,7 @@ public class JdbcTransaction implements Transaction {
 
   @Override
   public Connection getConnection() throws SQLException {
+    // 连接为空，进行创建
     if (connection == null) {
       openConnection();
     }
@@ -64,6 +65,7 @@ public class JdbcTransaction implements Transaction {
 
   @Override
   public void commit() throws SQLException {
+    // 非自动提交，则执行提交事务
     if (connection != null && !connection.getAutoCommit()) {
       if (log.isDebugEnabled()) {
         log.debug("Committing JDBC Connection [" + connection + "]");
@@ -74,6 +76,7 @@ public class JdbcTransaction implements Transaction {
 
   @Override
   public void rollback() throws SQLException {
+    // 非自动提交。则回滚事务
     if (connection != null && !connection.getAutoCommit()) {
       if (log.isDebugEnabled()) {
         log.debug("Rolling back JDBC Connection [" + connection + "]");
@@ -85,6 +88,9 @@ public class JdbcTransaction implements Transaction {
   @Override
   public void close() throws SQLException {
     if (connection != null) {
+      // 重置连接为自动提交
+      //spring事务机制是，获取数据库连接，修改数据库的自动提交为spring管理，
+      // spring进行事务的回滚提交均通过数据库连接进行
       resetAutoCommit();
       if (log.isDebugEnabled()) {
         log.debug("Closing JDBC Connection [" + connection + "]");
@@ -93,6 +99,11 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 设置指定的 autoCommit 属性
+   *
+   * @param desiredAutoCommit 指定的 autoCommit 属性
+   */
   protected void setDesiredAutoCommit(boolean desiredAutoCommit) {
     try {
       if (connection.getAutoCommit() != desiredAutoCommit) {
@@ -131,14 +142,22 @@ public class JdbcTransaction implements Transaction {
     }
   }
 
+  /**
+   * 获得 Connection 对象
+   *
+   * @throws SQLException 获得失败
+   */
   protected void openConnection() throws SQLException {
     if (log.isDebugEnabled()) {
       log.debug("Opening JDBC Connection");
     }
+    //获得连接
     connection = dataSource.getConnection();
     if (level != null) {
+      //设置隔离级别
       connection.setTransactionIsolation(level.getLevel());
     }
+    // 设置 autoCommit 属性
     setDesiredAutoCommit(autoCommit);
   }
 
