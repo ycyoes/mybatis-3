@@ -43,7 +43,7 @@ import org.apache.ibatis.scripting.LanguageDriver;
 public @interface Lang {
   /**
    * Returns the {@link LanguageDriver} implementation type to use.
-   *
+   * 驱动类
    * @return the {@link LanguageDriver} implementation type
    */
   Class<? extends LanguageDriver> value();

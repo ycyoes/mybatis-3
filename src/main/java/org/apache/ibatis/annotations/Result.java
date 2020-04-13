@@ -40,56 +40,56 @@ public @interface Result {
   /**
    * Returns whether id column or not.
    *
-   * @return {@code true} if id column; {@code false} if otherwise
+   * @return {@code true} if id column; {@code false} if otherwise  是否是 ID 字段
    */
   boolean id() default false;
 
   /**
    * Return the column name(or column label) to map to this argument.
    *
-   * @return the column name(or column label)
+   * @return the column name(or column label) 数据库的字段
    */
   String column() default "";
 
   /**
    * Returns the property name for applying this mapping.
    *
-   * @return the property name
+   * @return the property name   Java 类中的属性
    */
   String property() default "";
 
   /**
    * Return the java type for this argument.
    *
-   * @return the java type
+   * @return the java type  Java Type
    */
   Class<?> javaType() default void.class;
 
   /**
    * Return the jdbc type for column that map to this argument.
    *
-   * @return the jdbc type
+   * @return the jdbc type  JDBC Type
    */
   JdbcType jdbcType() default JdbcType.UNDEFINED;
 
   /**
    * Returns the {@link TypeHandler} type for retrieving a column value from result set.
    *
-   * @return the {@link TypeHandler} type
+   * @return the {@link TypeHandler} type 使用的 TypeHandler 处理器
    */
   Class<? extends TypeHandler> typeHandler() default UnknownTypeHandler.class;
 
   /**
    * Returns the mapping definition for single relationship.
    *
-   * @return the mapping definition for single relationship
+   * @return the mapping definition for single relationship {@link One} 注解
    */
   One one() default @One;
 
   /**
    * Returns the mapping definition for collection relationship.
    *
-   * @return the mapping definition for collection relationship
+   * @return the mapping definition for collection relationship {@link Many} 注解
    */
   Many many() default @Many;
 }
