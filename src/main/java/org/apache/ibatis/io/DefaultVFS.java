@@ -58,17 +58,20 @@ public class DefaultVFS extends VFS {
 
       // First, try to find the URL of a JAR file containing the requested resource. If a JAR
       // file is found, then we'll list child resources by reading the JAR.
+      // 如果 url 指向的是 Jar Resource ，则返回该 Jar Resource ，否则返回 null
       URL jarUrl = findJarForResource(url);
       if (jarUrl != null) {
         is = jarUrl.openStream();
         if (log.isDebugEnabled()) {
           log.debug("Listing " + url);
         }
+        // 遍历 Jar Resource
         resources = listResources(new JarInputStream(is), path);
       }
       else {
         List<String> children = new ArrayList<>();
         try {
+          // 判断为 JAR URL
           if (isJar(url)) {
             // Some versions of JBoss VFS might give a JAR stream even if the resource
             // referenced by the URL isn't actually a JAR
@@ -94,6 +97,7 @@ public class DefaultVFS extends VFS {
              * the class loader as a child of the current resource. If any line fails
              * then we assume the current resource is not a directory.
              */
+            // 【重点】<1> 获得路径下的所有资源
             is = url.openStream();
             List<String> lines = new ArrayList<>();
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
@@ -140,15 +144,19 @@ public class DefaultVFS extends VFS {
         }
 
         // The URL prefix to use when recursively listing child resources
+        // 【重点】<2> 计算 prefix
         String prefix = url.toExternalForm();
         if (!prefix.endsWith("/")) {
           prefix = prefix + "/";
         }
 
         // Iterate over immediate children, adding files and recursing into directories
+        // 【重点】 <2> 遍历子路径
         for (String child : children) {
           String resourcePath = path + "/" + child;
+          // 添加到 resources 中
           resources.add(resourcePath);
+          // 递归遍历子路径，并将结果添加到 resources 中
           URL childUrl = new URL(prefix + child);
           resources.addAll(list(childUrl, resourcePath));
         }
@@ -177,6 +185,7 @@ public class DefaultVFS extends VFS {
    */
   protected List<String> listResources(JarInputStream jar, String path) throws IOException {
     // Include the leading and trailing slash when matching names
+    // 保证头尾都是 /
     if (!path.startsWith("/")) {
       path = "/" + path;
     }
@@ -185,6 +194,7 @@ public class DefaultVFS extends VFS {
     }
 
     // Iterate over the entries and collect those that begin with the requested path
+    // 遍历条目并收集以请求路径开头的条目
     List<String> resources = new ArrayList<>();
     for (JarEntry entry; (entry = jar.getNextJarEntry()) != null;) {
       if (!entry.isDirectory()) {
@@ -237,6 +247,7 @@ public class DefaultVFS extends VFS {
     }
 
     // Look for the .jar extension and chop off everything after that
+    // 判断是否以 .jar 结尾
     StringBuilder jarUrl = new StringBuilder(url.toExternalForm());
     int index = jarUrl.lastIndexOf(".jar");
     if (index >= 0) {
@@ -249,7 +260,7 @@ public class DefaultVFS extends VFS {
       if (log.isDebugEnabled()) {
         log.debug("Not a JAR: " + jarUrl);
       }
-      return null;
+      return null;  // 如果不以 .jar 结尾，则直接返回 null
     }
 
     // Try to open and test it
@@ -269,6 +280,7 @@ public class DefaultVFS extends VFS {
         // File name might be URL-encoded
         if (!file.exists()) {
           try {
+            // 处理路径编码问题
             file = new File(URLEncoder.encode(jarUrl.toString(), "UTF-8"));
           } catch (UnsupportedEncodingException e) {
             throw new RuntimeException("Unsupported encoding?  UTF-8?  That's unpossible.");
@@ -326,7 +338,9 @@ public class DefaultVFS extends VFS {
     InputStream is = null;
     try {
       is = url.openStream();
+      // 读取文件头
       is.read(buffer, 0, JAR_MAGIC.length);
+      // 判断文件头的 magic number 是否符合 JAR
       if (Arrays.equals(buffer, JAR_MAGIC)) {
         if (log.isDebugEnabled()) {
           log.debug("Found JAR: " + url);

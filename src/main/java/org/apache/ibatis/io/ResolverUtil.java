@@ -79,6 +79,9 @@ public class ResolverUtil<T> {
    * that this test will match the parent type itself if it is presented for matching.
    */
   public static class IsA implements Test {
+    /**
+     * 指定类
+     */
     private Class<?> parent;
 
     /** Constructs an IsA test using the supplied Class as the parent class/interface. */
@@ -103,6 +106,9 @@ public class ResolverUtil<T> {
    * is, then the test returns true, otherwise false.
    */
   public static class AnnotatedWith implements Test {
+    /**
+     * 注解
+     */
     private Class<? extends Annotation> annotation;
 
     /** Constructs an AnnotatedWith test for the specified annotation type. */
@@ -122,6 +128,7 @@ public class ResolverUtil<T> {
     }
   }
 
+  // 符合条件的类的集合
   /** The set of matches being accumulated. */
   private Set<Class<? extends T>> matches = new HashSet<>();
 
@@ -214,12 +221,15 @@ public class ResolverUtil<T> {
    *        classes, e.g. {@code net.sourceforge.stripes}
    */
   public ResolverUtil<T> find(Test test, String packageName) {
+    // <1> 获得包的路径
     String path = getPackagePath(packageName);
 
     try {
+      // <2> 获得路径下的所有文件
       List<String> children = VFS.getInstance().list(path);
       for (String child : children) {
         if (child.endsWith(".class")) {
+          // 如果匹配，则添加到结果集
           addIfMatching(test, child);
         }
       }
@@ -250,6 +260,7 @@ public class ResolverUtil<T> {
   @SuppressWarnings("unchecked")
   protected void addIfMatching(Test test, String fqn) {
     try {
+      // 获得全类名
       String externalName = fqn.substring(0, fqn.indexOf('.')).replace('/', '.');
       ClassLoader loader = getClassLoader();
       if (log.isDebugEnabled()) {
@@ -257,6 +268,7 @@ public class ResolverUtil<T> {
       }
 
       Class<?> type = loader.loadClass(externalName);
+      // 判断是否匹配
       if (test.matches(type)) {
         matches.add((Class<T>) type);
       }
