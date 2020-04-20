@@ -41,7 +41,7 @@ public @interface Param {
   /**
    * Returns the parameter name.
    *
-   * @return the parameter name
+   * @return the parameter name 参数名
    */
   String value();
 }

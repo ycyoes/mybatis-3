@@ -41,7 +41,7 @@ public @interface Update {
   /**
    * Returns an SQL for updating record(s).
    *
-   * @return an SQL for updating record(s)
+   * @return an SQL for updating record(s)  更新语句
    */
   String[] value();
 }

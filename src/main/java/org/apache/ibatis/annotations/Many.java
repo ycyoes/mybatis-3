@@ -36,7 +36,7 @@ public @interface Many {
   /**
    * Returns the statement id that retrieves collection.
    *
-   * @return the statement id
+   * @return the statement id 已映射语句（也就是映射器方法）的全限定名
    */
   String select() default "";
 

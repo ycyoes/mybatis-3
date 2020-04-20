@@ -41,7 +41,7 @@ public @interface Delete {
   /**
    * Returns an SQL for deleting record(s).
    *
-   * @return an SQL for deleting record(s)
+   * @return an SQL for deleting record(s)  删除语句
    */
   String[] value();
 }

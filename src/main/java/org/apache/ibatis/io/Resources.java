@@ -58,6 +58,7 @@ public class Resources {
    * @param defaultClassLoader - the new default ClassLoader
    */
   public static void setDefaultClassLoader(ClassLoader defaultClassLoader) {
+    // 修改 ClassLoaderWrapper.
     classLoaderWrapper.defaultClassLoader = defaultClassLoader;
   }
 
@@ -214,6 +215,7 @@ public class Resources {
    */
   public static InputStream getUrlAsStream(String urlString) throws IOException {
     URL url = new URL(urlString);
+    // 打开 URLConnection
     URLConnection conn = url.openConnection();
     return conn.getInputStream();
   }

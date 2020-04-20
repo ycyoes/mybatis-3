@@ -25,7 +25,13 @@ import java.net.URL;
  */
 public class ClassLoaderWrapper {
 
+  /**
+   * 默认 ClassLoader 对象
+   */
   ClassLoader defaultClassLoader;
+  /**
+   * 系统 ClassLoader 对象
+   */
   ClassLoader systemClassLoader;
 
   ClassLoaderWrapper() {
@@ -111,15 +117,17 @@ public class ClassLoaderWrapper {
   InputStream getResourceAsStream(String resource, ClassLoader[] classLoader) {
     for (ClassLoader cl : classLoader) {
       if (null != cl) {
-
+        // 获得 InputStream ，不带 /
         // try to find the resource as passed
         InputStream returnValue = cl.getResourceAsStream(resource);
 
+        // 获得 InputStream ，带 /
         // now, some class loaders want this leading "/", so we'll add it and try again if we didn't find the resource
         if (null == returnValue) {
           returnValue = cl.getResourceAsStream("/" + resource);
         }
 
+        // 成功获得到，返回
         if (null != returnValue) {
           return returnValue;
         }
@@ -142,10 +150,11 @@ public class ClassLoaderWrapper {
     for (ClassLoader cl : classLoader) {
 
       if (null != cl) {
-
+        // 获得 URL ，不带 /
         // look for the resource as passed in...
         url = cl.getResource(resource);
 
+        // 获得 URL ，带 /
         // ...but some class loaders want this leading "/", so we'll add it
         // and try again if we didn't find the resource
         if (null == url) {
@@ -197,6 +206,7 @@ public class ClassLoaderWrapper {
 
     }
 
+    // 获得不到，抛出 ClassNotFoundException 异常
     throw new ClassNotFoundException("Cannot find class: " + name);
 
   }

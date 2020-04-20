@@ -41,7 +41,7 @@ public @interface Insert {
   /**
    * Returns an SQL for inserting record(s).
    *
-   * @return an SQL for inserting record(s)
+   * @return an SQL for inserting record(s) 插入语句
    */
   String[] value();
 }

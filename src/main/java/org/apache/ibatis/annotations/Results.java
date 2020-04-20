@@ -54,7 +54,7 @@ public @interface Results {
   /**
    * Returns mapping definitions for property.
    *
-   * @return mapping definitions
+   * @return mapping definitions  {@link Result} 数组
    */
   Result[] value() default {};
 }
